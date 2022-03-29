@@ -1,3 +1,6 @@
+import random
+import threading
+import time
 import pandas as pd
 import requests
 from tqdm import tqdm
@@ -57,32 +60,46 @@ endRound =int(thisnum.strip("회"))
 startRound = endRound - 50
 
 
-#lotto_dict, lotto_df = getLottoWinInfo(startRound, endRound)
+lotto_dict, lotto_df = getLottoWinInfo(startRound, endRound)
 # CSV 파일로 저장
 #lotto_df.to_csv(str(startRound) + '-' + str(endRound) + '_lotto_number.csv', index = False, encoding = 'utf-8-sig')
+#csv_test = pd.read_csv(str(startRound) + '-' + str(endRound) + '_lotto_number.csv')
+proba = np.zeros([1,46])
 
-csv_test = pd.read_csv(str(startRound) + '-' + str(endRound) + '_lotto_number.csv')
-
-proba = np.zeros([1,45])
-
-array_test = csv_test.to_numpy()
+array_test = lotto_df.to_numpy()
 # print(proba)
 
 #반복문으로 1~45까지 어떤 수가 나왔는지 count
-for j in range(1,len(csv_test.index)):
+for j in range(1,len(array_test)):
     for i in range(2,9):
-        for k in range(1,45):
+        for k in range(1,46):
             if array_test[j][i] == k:
                 proba[0][k] = proba[0][k] + 1
 
+
 #확률 구하기
 percentage = 0
-for i in range(1,45):
+weight = np.zeros([45])
+
+for i in range(1,46):
     percentage += (proba[0][i] / np.sum(proba))
-    print(proba[0][i] / np.sum(proba))
+    weight[i-1] = proba[0][i] / np.sum(proba)
+    print(i ," = ", proba[0][i] / np.sum(proba) , " 총 개수 =" ,np.sum(proba)," " ,i," 개수 = " ,proba[0][i])
 
 #print(percentage)
 print(proba)
+print(weight)
 
 
+#랜덤 추출하기(확률에 따라)
+select_index = random.choices(range(1,46), weights= weight, k=7)
+
+print(select_index)
 #print(csv_test.shape)
+
+
+#일정 시간마다 반복 출력하기
+def timer():
+    getLottoWinInfo(0,51)
+    threading.Timer(100,timer).start()
+
