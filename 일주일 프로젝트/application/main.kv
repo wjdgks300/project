@@ -1,0 +1,17 @@
+#:include kv/homescreen.kv
+#:include kv/settingscreen.kv
+#:include kv/lotto.kv
+
+GridLayout:
+    cols: 1
+    ScreenManager:
+        id: screen_manager
+        LottoScreen:
+            name: "lotto_screen"
+            id: lotto_screen
+        HomeScreen:
+            name: "home_screen"
+            id: home_screen
+        SettingScreen:
+            name: "setting_screen"
+            id: setting_screen

@@ -1,0 +1,99 @@
+#:import utils kivy.utils
+
+<LottoScreen>:
+    FloatLayout:
+        canvas:
+            # backgrond color change
+            Color:
+                rgb: utils.get_color_from_hex("#39B3F2")
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        Label:
+            pos_hint: {"top": 1, "left" : 1}
+            size_hint: 1, .1
+            text: "    lotto application"
+            text_size: self.size
+            id: "title"
+            halign: "left"
+            valign: "middle"
+        Label:
+            pos_hint: {"top": .9, "left": 1}
+            size_hint: 1, .1
+            text: "this week winning number"
+            id: "winning_number"
+        GridLayout:
+            #put icon winning numbers
+            rows: 1
+            pos_hint: {"top": .8, "left": 1}
+            size_hint: 1, .1
+            Image:
+                source: "icon/1.png"
+            Image:
+                source: "icon/2.png"
+            Image:
+                source: "icon/3.png"
+            Image:
+                source: "icon/4.png"
+            Image:
+                source: "icon/5.png"
+            Image:
+                source: "icon/6.png"
+            Image:
+                source: "icon/plus.png"
+            Image:
+                source: "icon/7.png"
+        Label:
+            pos_hint: {"top": .7, "left": 1}
+            size_hint: 1, .05
+            text: "    winning money"
+            id: winning_money
+            text_size: self.size
+            halign: "left"
+            valign: "middle"
+        Label:
+            pos_hint: {"top": .65, "left": 1}
+            size_hint: 1, .15
+            text: "first place \nsecond place \nthird place \nfourth place \nfifth place"
+            id: winning_money
+            text_size: self.size
+            halign: "left"
+            valign: "middle"
+        GridLayout:
+            #banner grid
+            cols: 1
+            pos_hint: {"top": .5, "left": 1 }
+            size_hint: 1, .1
+            Button:
+                text:
+                    "click here"
+                on_release:
+                    print("released click button")
+                    app.change_screen("setting_screen")
+
+        Label:
+            pos_hint: {"top": .3, "left": 1}
+            size_hint: 1, .1
+            text: "today lucky number"
+            id: "lucky_number"
+        GridLayout:
+            #put icon winning numbers
+            rows: 1
+            pos_hint: {"top": .2, "left": 1}
+            size_hint: 1, .1
+            Image:
+                source: "icon/1.png"
+            Image:
+                source: "icon/2.png"
+            Image:
+                source: "icon/3.png"
+            Image:
+                source: "icon/4.png"
+            Image:
+                source: "icon/5.png"
+            Image:
+                source: "icon/6.png"
+            Image:
+                source: "icon/plus.png"
+            Image:
+                source: "icon/7.png"

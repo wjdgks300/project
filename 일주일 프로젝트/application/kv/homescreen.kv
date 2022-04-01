@@ -1,0 +1,51 @@
+#:import utils kivy.utils
+
+<HomeScreen>:
+    FloatLayout:
+        canvas:
+            # backgrond color change
+            Color:
+                rgb: utils.get_color_from_hex("#39B3F2")
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        GridLayout:
+            canvas:
+                Color:
+                    rgb: utils.get_color_from_hex("#39B3F2")
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+            rows: 1
+            pos_hint: {"top": 1, "left": 1}
+            size_hint: 1, .1
+        GridLayout:
+            #put two weather icons and avastar icon
+            rows: 1
+            pos_hint: {"top": .9, "left": 1}
+            size_hint: 1, .2
+            Button:
+                text:
+                    "222"
+        Label:
+            pos_hint: {"top": .7, "left": 1}
+            size_hint: 1, .1
+            text: "12 Day Streak"
+            id: streak_label
+        GridLayout:
+            #banner grid
+            cols: 1
+            pos_hint: {"top": .6, "left": 1 }
+            size_hint: 1, .4
+            Button:
+                text:
+                    "3"
+        GridLayout:
+            # add3menu button here
+            rows:1
+            pos_hint: {"top": .2, "left": 1}
+            size_hint: 1, .2
+            Button:
+                text:
+                    "444"
+
