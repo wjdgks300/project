@@ -1,13 +1,14 @@
 
 <SettingScreen>:
     GridLayout:
+        rows: 2
         Button:
             text:
                 "you are at the setting screen"
             on_release:
                 app.change_screen("lotto_screen")
         Label:
-            text: " abc "
+            text: ""
             pos_hint: {"top": .7, "left": 1}
             size_hint: 1, .1
             id: number_label
