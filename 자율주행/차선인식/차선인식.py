@@ -5,18 +5,37 @@ import cv2 as cv
 import numpy as np
 
 
-cap = cv2.VideoCapture("video/video.mp4")
+cap = cv2.VideoCapture('C:/Users/wjdgk/PycharmProjects/autonomousVehicle/video/video.mp4')
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 print(width, height, end=',')
 
+
+def roi(image):
+    polygons = np.array([[ (210,660), (1100,660), (720, 460), (600,460)]])
+    image_mask = np.zeros_like(image)
+    cv2.fillPoly(image_mask, polygons, 255)
+    masking_image = cv2.bitwise_and(image, image_mask)
+    return masking_image
+
+
+def onMouse(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print("좌표 : ", x, y)
+
+
 while(True):
     ret, src = cap.read()
+    src = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     src = cv2.resize(src, (1280, 720))
-    #resize error 가 남 왜 나는지 찾아봐야 한다.
     dst = cv.Canny(src, 50, 200, None, 3)
+
+    dst = roi(dst)
+
     cdst = cv.cvtColor(dst, cv.COLOR_GRAY2BGR)
     cdstP = np.copy(cdst)
+
+
 
     lines = cv.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
     #허프 변환 cv2.HoughLines(image, rho, theta, threshold[, lines[, srn[, stn[, min_theta[, max_theta]]]]])
@@ -43,11 +62,13 @@ while(True):
             cv.line(cdstP, (l[0],l[1]), (l[2], l[3]), (0,0,255),3,cv.LINE_AA)
 
     cv.imshow("source" ,src)
-    cv.imshow("hough line", cdst)
+    #cv.imshow("Dst", dst)
+    #cv.imshow("hough line", cdst)
     cv.imshow("Probabilistic line transform", cdstP)
-
+    cv2.setMouseCallback('Probabilistic line transform',onMouse)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-    cap.release()
-    cv2.destroyAllWindows()
+cap.release()
+cv2.destroyAllWindows()
+
