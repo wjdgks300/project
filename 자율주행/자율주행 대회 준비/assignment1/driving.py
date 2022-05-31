@@ -20,6 +20,8 @@ import random
 
 Offset = 330
 
+
+
 def draw_rectangle(img, lpos, rpos, offset=0):
     center = (lpos + rpos) / 2
 
@@ -36,23 +38,23 @@ def onMouse(event, x, y, flags, param):
         print("point : ", x, y)
 
 def roi_l(image):
-    polygons = np.array([[(80,350),(240,350),(150,420),(5,420)]])
+    polygons = np.array([[(100,350),(380,350),(160,420),(1,420)]])
     image_mask = np.zeros_like(image)
     cv2.fillPoly(image_mask,polygons,255)
     masking_image = cv2.bitwise_and(image,image_mask)
     return masking_image
 
 def roi_r(image):
-    polygons = np.array([[(168,310),(470,310),(610,400),(20,400)]])
+    polygons = np.array([[(360,350),(530,350),(635,420),(460,420)]])
     image_mask = np.zeros_like(image)
     cv2.fillPoly(image_mask,polygons,255)
     masking_image = cv2.bitwise_and(image,image_mask)
     return masking_image
 
 def roi(image):
-    triangle = np.array([[(5,407) ,(320,264),(630,420)]])
+    triangle = np.array([[(5,407),(630,420),(320,264)]])
     mask = np.zeros_like(image)
-    mask = cv2.fillPoly(mask,triangle,255)
+    cv2.fillPoly(mask,triangle,255)
     mask = cv2.bitwise_and(image,mask)
     return mask
 
@@ -64,6 +66,13 @@ def display_lines(image, lines):
             cv2.line(lines_image, (x1, y1), (x2, y2), (255,0,0), 10)
     return lines_image
 
+def display(image, lines):
+    lines_image = np.zeros_like(image)
+    if lines is not None:
+        for i in xrange(len(lines)):
+            for x1, y1, x2, y2 in lines[i]:
+                cv2.line(lines_image, (x1,y1), (x2,y2), (255,0,0), 10)
+    return lines_image
 
 def make_points(image, average):
     slope, y_int = average
@@ -145,12 +154,25 @@ def drive(angle, speed):
     motor_msg.speed = speed
     motor.publish(motor_msg)
 
+def mask_img(image, blue_threshold = 200, green_threshold = 200, red_threshold = 200):
+    bgr_threshold = [blue_threshold, green_threshold, red_threshold]
+    thresholds = (image[:,:,0] < bgr_threshold[0]) \
+                | (image[:,:,1] < bgr_threshold[1]) \
+                | (image[:,:,2] < bgr_threshold[2]) 
+    image[thresholds] = [0,0,0]
+    return image
+
 def process_image(frame):
     global Offset
     lpos = 70
-    rpos = 530
-    #
-    src = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+    rpos = 590
+
+    # masking only white color 
+    masking_tmp = frame.copy() 
+    mask = mask_img(masking_tmp)
+    # cv2.imshow("mask_img", mask)
+    
+    src = cv2.cvtColor(mask,cv2.COLOR_BGR2GRAY)
     dst = cv2.Canny(src, 50,200,None, 3)
 
     dst_l = roi_l(dst)
@@ -161,9 +183,9 @@ def process_image(frame):
     cdstp_l = np.copy(cdst_l)
     cdstp_r = np.copy(cdst_r)
 
-    dst_m = roi(dst)
-
-    cdstp = cv2.cvtColor(dst_m,cv2.COLOR_GRAY2BGR)
+    # dst_m = roi(dst)
+    
+    # cdstp = cv2.cvtColor(dst_m,cv2.COLOR_GRAY2BGR)
 
 
     ############################# houghlines
@@ -182,30 +204,38 @@ def process_image(frame):
     ######################################################
 
     ########################### roi divide left, right 
-    # linesP_l = cv2.HoughLinesP(dst_l, 1, np.pi / 180, 50, None, 50, 10)
-    # linesP_r = cv2.HoughLinesP(dst_r, 1, np.pi / 180, 50, None, 50, 10)
+    linesP_l = cv2.HoughLinesP(dst_l, 1, np.pi / 180, 50, None, 50, 10)
+    linesP_r = cv2.HoughLinesP(dst_r, 1, np.pi / 180, 50, None, 50, 10)
     ###############################
 
     ############################ roi create only one 
-    linesP = cv2.HoughLinesP(dst_m, 1, np.pi / 180, 50, None, 50, 10)
-    
-    # if linesP_l is not None:
-    #     for line in linesP_l:
-    #         for x1, y1, x2, y2 in line:
-    #             cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
-    #             lpos = (x1 + x2) /2
-    
-    # if linesP_r is not None:
-    #     for line in linesP_r:
-    #         for x1, y1, x2, y2 in line:
-    #             cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
-    #             rpos = (x1 + x2 )/ 2
+    # linesP = cv2.HoughLinesP(dst_m, 1, np.pi / 180, 20, 30, 40)
+    # test_lines = display(frame, linesP)
+    # cv2.imshow("test_img", test_lines)
 
 
-    average_lines = average(frame, linesP)
-    black_lines = display_lines(frame, average_lines)
+
+    if linesP_l is not None:
+        for line in linesP_l:
+            for x1, y1, x2, y2 in line:
+                slope = (y2-y1) / (x2-x1)
+                if(slope) <= 0:
+                    cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
+                    lpos = (x1 + x2) /2
     
-    cv2.imshow("frame", black_lines)
+    if linesP_r is not None:
+        for line in linesP_r:
+            for x1, y1, x2, y2 in line:
+                slope = (y2-y1) / (x2-x1)
+                if(slope) >= 0:
+                    cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
+                rpos = (x1 + x2 )/ 2
+
+
+    # average_lines = average(frame, linesP)
+    # black_lines = display_lines(frame, average_lines)
+    
+    # cv2.imshow("frame", black_lines)
     # line_image = np.zeros_like(frame)
     # if average_lines is not None:
     #     for line in average_lines:
@@ -215,15 +245,17 @@ def process_image(frame):
     
     # cv2.imshow("left line show", cdstp_l)
     # cv2.imshow("right line show", cdstp_r)
-    # lpos = x1
-    # rpos = x2
 
+    cdstp_add =cv2.add(cdstp_l, cdstp_r)
+    combo_image = cv2.addWeighted(frame, 0.8, cdstp_add,1,1)
+    # cv2.imshow("line show", cdstp_add)
     #cv2.imshow("lines", line_image)
     #print(x1," ", y1," ",x2, " ",y2)
     # print("lpos =", lpos, "rpos = ", rpos)
-    frame = draw_rectangle(frame, lpos, rpos, offset=Offset)
 
-    return (lpos, rpos), frame
+    combo_image = draw_rectangle(combo_image, lpos, rpos, offset=Offset)
+
+    return (lpos, rpos), combo_image
 
 
 
@@ -265,10 +297,10 @@ def start():
         # 이미지처리를 위해 카메라 원본이미지를 img에 복사 저장
         img = image.copy()  
         pos, frame = process_image(img)
-
+        
 
         # 디버깅을 위해 모니터에 이미지를 디스플레이
-        cv2.imshow("CAM View", img)
+        cv2.imshow("CAM View", frame)
         cv2.setMouseCallback('CAM View', onMouse)
         cv2.waitKey(1)       
        
@@ -278,8 +310,18 @@ def start():
         #=========================================
 
         # 우선 테스트를 위해 직진(0값)으로 설정
-        angle = (pos[0] +pos[1])/2 -300
-        angle = angle * (0.16)
+        speed = 10
+
+        angle = (pos[0] +pos[1])/2 -320
+        print(angle)
+        angle = angle * (0.228)
+        print(angle)
+        if abs(angle) < 6.5:
+            speed = 14
+        else :
+            speed = 10
+
+        # print(pos[0], pos[1], angle)
 	    #angle = (pos[0] +pos[1]) / 2 * (0.15)
         #print(angle)
         
@@ -290,7 +332,7 @@ def start():
         #=========================================
 
         # 우선 테스트를 위해 느린속도(10값)로 설정
-        speed = 10
+        
 		
         # drive() 호출. drive()함수 안에서 모터 토픽이 발행됨.
         drive(angle, speed)
