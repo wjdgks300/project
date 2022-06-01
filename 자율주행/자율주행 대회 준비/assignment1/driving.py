@@ -38,14 +38,14 @@ def onMouse(event, x, y, flags, param):
         print("point : ", x, y)
 
 def roi_l(image):
-    polygons = np.array([[(100,350),(380,350),(160,420),(1,420)]])
+    polygons = np.array([[(120,350),(390,350),(190,420),(1,420)]])
     image_mask = np.zeros_like(image)
     cv2.fillPoly(image_mask,polygons,255)
     masking_image = cv2.bitwise_and(image,image_mask)
     return masking_image
 
 def roi_r(image):
-    polygons = np.array([[(360,350),(530,350),(635,420),(460,420)]])
+    polygons = np.array([[(250,350),(500,350),(635,420),(340,420)]])
     image_mask = np.zeros_like(image)
     cv2.fillPoly(image_mask,polygons,255)
     masking_image = cv2.bitwise_and(image,image_mask)
@@ -82,28 +82,28 @@ def make_points(image, average):
     x2 = int((y2-y_int)/slope)
     return np.array([x1,y1,x2,y2])
 
-def average(image, lines):
-    left = []
-    right = []
+def average(lines):
+    if len(lines) == 0:
+        return
+    elif len(lines) == 1:
+        return lines
+
+    num_lines = len(lines)
+
+    sum_x1 = 0
+    sum_y1 = 0
+    sum_x2 = 0
+    sum_y2 = 0
 
     for line in lines:
-        # print(line)
-        x1, y1, x2, y2 = line.reshape(4)
-        parameters = np.polyfit((x1,x2), (y1,y2), 1)
-        slope = parameters[0]
-        y_int = parameters[1]
+        for x1, y1, x2, y2 in line:
+            sum_x1 += x1
+            sum_y1 += y1
+            sum_x2 += x2
+            sum_y2 += y2
 
-        if slope < 0:
-            left.append((slope, y_int))
-        else:
-            right.append((slope,y_int))
-
-    rigth_avg = np.average(right, axis = 0)
-    left_avg = np.average(left, axis = 0)
-
-    left_line = make_points(image, left_avg)
-    right_line = make_points(image, rigth_avg)
-    return np.array([left_line, right_line])
+    avg_line = np.array([sum_x1/num_lines,sum_y1/num_lines,sum_x2/num_lines,sum_y2/num_lines])
+    return avg_line
 
 
 #=============================================
@@ -164,7 +164,7 @@ def mask_img(image, blue_threshold = 200, green_threshold = 200, red_threshold =
 
 def process_image(frame):
     global Offset
-    lpos = 70
+    lpos = 60
     rpos = 590
 
     # masking only white color 
@@ -204,8 +204,8 @@ def process_image(frame):
     ######################################################
 
     ########################### roi divide left, right 
-    linesP_l = cv2.HoughLinesP(dst_l, 1, np.pi / 180, 50, None, 50, 10)
-    linesP_r = cv2.HoughLinesP(dst_r, 1, np.pi / 180, 50, None, 50, 10)
+    linesP_l = cv2.HoughLinesP(dst_l, 1, np.pi / 180, 40, None, 50, 10)
+    linesP_r = cv2.HoughLinesP(dst_r, 1, np.pi / 180, 40, None, 50, 10)
     ###############################
 
     ############################ roi create only one 
@@ -213,12 +213,19 @@ def process_image(frame):
     # test_lines = display(frame, linesP)
     # cv2.imshow("test_img", test_lines)
 
+    
+    avg_lines_l = average(linesP_l)
+    avg_lines_r = average(linesP_r)
+    print(avg_lines_l)
+    print(avg_lines_r)
+    # print(linesP_l[0], linesP_l[1])
 
-
+    # print(len(linesP_l))
     if linesP_l is not None:
         for line in linesP_l:
             for x1, y1, x2, y2 in line:
-                slope = (y2-y1) / (x2-x1)
+                slope = float(y2-y1) / float(x2-x1)
+                # print(slope)
                 if(slope) <= 0:
                     cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
                     lpos = (x1 + x2) /2
@@ -226,10 +233,10 @@ def process_image(frame):
     if linesP_r is not None:
         for line in linesP_r:
             for x1, y1, x2, y2 in line:
-                slope = (y2-y1) / (x2-x1)
+                slope = float(y2-y1) / float(x2-x1)
                 if(slope) >= 0:
                     cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
-                rpos = (x1 + x2 )/ 2
+                    rpos = (x1 + x2 )/ 2
 
 
     # average_lines = average(frame, linesP)
@@ -313,13 +320,21 @@ def start():
         speed = 10
 
         angle = (pos[0] +pos[1])/2 -320
-        print(angle)
+        # print(angle)
         angle = angle * (0.228)
-        print(angle)
+        # print(angle)
+        if abs(angle) < 1.5:
+            speed = 16
         if abs(angle) < 6.5:
             speed = 14
-        else :
+        elif abs(angle) > 6.5 and abs(angle) <12:
             speed = 10
+        elif abs(angle) < 14:
+            speed = 7
+            angle = angle * (1.2)
+        else :
+            speed = 5
+            angle = angle * (1.35)
 
         # print(pos[0], pos[1], angle)
 	    #angle = (pos[0] +pos[1]) / 2 * (0.15)
