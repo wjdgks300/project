@@ -21,7 +21,7 @@ import random
 Offset = 330
 
 
-
+# 네모 그리기 
 def draw_rectangle(img, lpos, rpos, offset=0):
     center = (lpos + rpos) / 2
 
@@ -33,68 +33,53 @@ def draw_rectangle(img, lpos, rpos, offset=0):
                        (0, 255, 0), 2)   
     return img
 
+
+# img에서 roi영역을 구하기 위해 마우스 클릭으로 x,y좌표 출력
 def onMouse(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         print("point : ", x, y)
 
+# 왼쪽 차선 roi
 def roi_l(image):
     polygons = np.array([[(120,350),(390,350),(190,420),(1,420)]])
-    image_mask = np.zeros_like(image)
-    cv2.fillPoly(image_mask,polygons,255)
-    masking_image = cv2.bitwise_and(image,image_mask)
+    image_mask = np.zeros_like(image)           # image_mask에 image 크기만큼 0인 배열 생성 
+    cv2.fillPoly(image_mask,polygons,255)       # 관심영역 만큼만 255로 설정
+    masking_image = cv2.bitwise_and(image,image_mask)   # bitwise연산을 통해 관심 영역만 추출해서 저장
     return masking_image
 
+# 오른쪽 차선 roi
 def roi_r(image):
     polygons = np.array([[(250,350),(500,350),(635,420),(340,420)]])
-    image_mask = np.zeros_like(image)
-    cv2.fillPoly(image_mask,polygons,255)
-    masking_image = cv2.bitwise_and(image,image_mask)
+    image_mask = np.zeros_like(image)           # image_mask에 image 크기만큼 0인 배열 생성 
+    cv2.fillPoly(image_mask,polygons,255)       # 관심영역 만큼만 255로 설정
+    masking_image = cv2.bitwise_and(image,image_mask)   # bitwise연산을 통해 관심 영역만 추출해서 저장
     return masking_image
 
-def roi(image):
-    triangle = np.array([[(5,407),(630,420),(320,264)]])
-    mask = np.zeros_like(image)
-    cv2.fillPoly(mask,triangle,255)
-    mask = cv2.bitwise_and(image,mask)
-    return mask
+# def roi(image):
+#     triangle = np.array([[(5,407),(630,420),(320,264)]])
+#     mask = np.zeros_like(image)
+#     cv2.fillPoly(mask,triangle,255)
+#     mask = cv2.bitwise_and(image,mask)
+#     return mask
 
-def display_lines(image, lines):
-    lines_image = np.zeros_like(image)
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line
-            cv2.line(lines_image, (x1, y1), (x2, y2), (255,0,0), 10)
-    return lines_image
 
-def display(image, lines):
-    lines_image = np.zeros_like(image)
-    if lines is not None:
-        for i in xrange(len(lines)):
-            for x1, y1, x2, y2 in lines[i]:
-                cv2.line(lines_image, (x1,y1), (x2,y2), (255,0,0), 10)
-    return lines_image
-
-def make_points(image, average):
-    slope, y_int = average
-    y1 = image.shape[0]
-    y2 = int(y1 * (3/5))
-    x1 = int((y1-y_int)/slope)
-    x2 = int((y2-y_int)/slope)
-    return np.array([x1,y1,x2,y2])
-
+# 평균선 계산 
 def average(lines):
-    if len(lines) == 0:
+    if lines is None:       # 아무것도 없으면 그냥 return
         return
-    elif len(lines) == 1:
+    if (len(lines) == 0):   # 아무것도 없으면 그냥 return
+        return
+    elif len(lines) == 1:   # 선이 하나면 원래 lines return
         return lines
 
-    num_lines = len(lines)
+    num_lines = len(lines)  # lines 개수 파악
 
     sum_x1 = 0
     sum_y1 = 0
     sum_x2 = 0
     sum_y2 = 0
 
+    # line 개수만큼 sum 변수에 더함 
     for line in lines:
         for x1, y1, x2, y2 in line:
             sum_x1 += x1
@@ -102,7 +87,8 @@ def average(lines):
             sum_x2 += x2
             sum_y2 += y2
 
-    avg_line = np.array([sum_x1/num_lines,sum_y1/num_lines,sum_x2/num_lines,sum_y2/num_lines])
+    # sum 값을 line 갯수만큼 나눠주어 avg_line 계산 
+    avg_line = np.array([[sum_x1/num_lines,sum_y1/num_lines,sum_x2/num_lines,sum_y2/num_lines]])
     return avg_line
 
 
@@ -154,6 +140,9 @@ def drive(angle, speed):
     motor_msg.speed = speed
     motor.publish(motor_msg)
 
+
+# 화면에서 흰색부분만 추출하기 위한 mask 함수 
+# 255, 255, 255 흰색이기 때문에 200, 200, 200 이상인 것만 추출
 def mask_img(image, blue_threshold = 200, green_threshold = 200, red_threshold = 200):
     bgr_threshold = [blue_threshold, green_threshold, red_threshold]
     thresholds = (image[:,:,0] < bgr_threshold[0]) \
@@ -164,30 +153,31 @@ def mask_img(image, blue_threshold = 200, green_threshold = 200, red_threshold =
 
 def process_image(frame):
     global Offset
-    lpos = 60
-    rpos = 590
+    lpos = 60                   # 차선 검출되지 않을 때 값  
+    rpos = 590                  # 차선 검출되지 않을 때 값  
 
     # masking only white color 
-    masking_tmp = frame.copy() 
+    masking_tmp = frame.copy()  
     mask = mask_img(masking_tmp)
     # cv2.imshow("mask_img", mask)
-    
-    src = cv2.cvtColor(mask,cv2.COLOR_BGR2GRAY)
-    dst = cv2.Canny(src, 50,200,None, 3)
 
-    dst_l = roi_l(dst)
-    dst_r = roi_r(dst)
+    src = cv2.cvtColor(mask,cv2.COLOR_BGR2GRAY)     # gray scale로 변환
+    dst = cv2.Canny(src, 50,200,None, 3)            # canny edge로 edge 검출
+
+
+    # roi divide left, right 
+    dst_l = roi_l(dst)      # 관심영역 왼쪽 
+    dst_r = roi_r(dst)      # 관심영역 오른쪽 
     # cv2.imshow("roi", dst_l)
-    cdst_l = cv2.cvtColor(dst_l, cv2.COLOR_GRAY2BGR)
-    cdst_r = cv2.cvtColor(dst_r, cv2.COLOR_GRAY2BGR)
-    cdstp_l = np.copy(cdst_l)
-    cdstp_r = np.copy(cdst_r)
 
-    # dst_m = roi(dst)
-    
+    cdst_l = cv2.cvtColor(dst_l, cv2.COLOR_GRAY2BGR) # gray to bgr 
+    cdst_r = cv2.cvtColor(dst_r, cv2.COLOR_GRAY2BGR) # gray to bgr 
+    cdstp_l = np.copy(cdst_l)   
+    cdstp_r = np.copy(cdst_r)    
     # cdstp = cv2.cvtColor(dst_m,cv2.COLOR_GRAY2BGR)
 
 
+    # 처음에 houghlines로 시도 
     ############################# houghlines
     # lines= cv2.HoughLines(dst, 1, np.pi / 180, 150, None, 0,0)
     # if lines is not None:
@@ -203,58 +193,77 @@ def process_image(frame):
     #         cv2.line(cdst, pt1, pt2, (0,0,255), 3, cv2.LINE_AA)
     ######################################################
 
-    ########################### roi divide left, right 
+    # houghlinesP 사용 houghlines 보다 시간이 덜 걸린다. 
+    ##########################
     linesP_l = cv2.HoughLinesP(dst_l, 1, np.pi / 180, 40, None, 50, 10)
     linesP_r = cv2.HoughLinesP(dst_r, 1, np.pi / 180, 40, None, 50, 10)
-    ###############################
+    ###########################
 
     ############################ roi create only one 
     # linesP = cv2.HoughLinesP(dst_m, 1, np.pi / 180, 20, 30, 40)
     # test_lines = display(frame, linesP)
     # cv2.imshow("test_img", test_lines)
 
-    
-    avg_lines_l = average(linesP_l)
-    avg_lines_r = average(linesP_r)
-    print(avg_lines_l)
-    print(avg_lines_r)
+    # 선들의 평균을 구해서 하나의 선만 구함 
+    left_line = average(linesP_l)
+    right_line = average(linesP_r)
+
+    # avg_lines 에 왼쪽 선, 오른쪽 선 추가 
+    avg_lines = []
+    if(left_line is not None):
+        avg_lines.append(left_line)
+    if(right_line is not None):
+        avg_lines.append(right_line)
+
+    # print(avg_lines)
+    # print(avg_lines_l)average_line
+    # print(avg_lines_r)
     # print(linesP_l[0], linesP_l[1])
 
+
+    #처음에는 average를 사용하지않고 여러개의 선검출 
+    #################### multi lines 
     # print(len(linesP_l))
-    if linesP_l is not None:
-        for line in linesP_l:
-            for x1, y1, x2, y2 in line:
-                slope = float(y2-y1) / float(x2-x1)
-                # print(slope)
-                if(slope) <= 0:
-                    cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
-                    lpos = (x1 + x2) /2
+    # if linesP_l is not None:
+    #     for line in linesP_l:                     
+    #         for x1, y1, x2, y2 in line:                   #왼쪽의 개수만큼 반복하면서 x1, y1, x2, y2 검출
+    #             slope = float(y2-y1) / float(x2-x1)       # 기울기 계산 
+    #             # print(slope)        
+    #             if(slope) <= 0:                           # 기울기가 0보다 작으면 왼쪽선으로 인식 
+    #                 cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)   # 선 그리기
+    #                 lpos = (x1 + x2) /2                   # lpos 를 (x1 + x2) / 2 로 반환 
     
-    if linesP_r is not None:
-        for line in linesP_r:
-            for x1, y1, x2, y2 in line:
-                slope = float(y2-y1) / float(x2-x1)
-                if(slope) >= 0:
-                    cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
-                    rpos = (x1 + x2 )/ 2
+    # if linesP_r is not None:                          
+    #     for line in linesP_r:                 
+    #         for x1, y1, x2, y2 in line:                   #오른쪽의 개수만큼 반복하면서 x1, y1, x2, y2 검출
+    #             slope = float(y2-y1) / float(x2-x1)       # 기울기 계산 
+    #             if(slope) >= 0:                           # 기울기가 0보다 크면 오른쪽선으로 인식 
+    #                 cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)       # 선 그리기
+    #                 rpos = (x1 + x2 )/ 2                  # rpos 를 (x1 + x2) / 2 로 반환 
+
+    ####################### only one line
+    # print(linesP_l.shape)
+    # print(avg_lines_l.shape)
 
 
-    # average_lines = average(frame, linesP)
-    # black_lines = display_lines(frame, average_lines)
-    
-    # cv2.imshow("frame", black_lines)
-    # line_image = np.zeros_like(frame)
-    # if average_lines is not None:
-    #     for line in average_lines:
-    #         x1, y1, x2, y2 = line
-    #         cv2.line(line_image, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)
 
-    
+    if avg_lines is not None:
+        for line in avg_lines:
+            x1, y1, x2, y2 = line.reshape(4)        # avg lines의 x1,y1,x2,y2 
+            slope = float(y2-y1) / float(x2-x1)     # 기울기 계산 
+            if(slope) <= 0:                         # 기울기가 0보다 작으면 왼쪽선으로 인식 
+                cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),15,cv2.LINE_AA)    # 선 그리기
+                lpos = (x1 + x2) / 2                 # lpos 를 (x1 + x2) / 2 로 반환
+            else:                                   # 기울기가 0보다 크면 오른쪽선으로 인식 
+                cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),15,cv2.LINE_AA)    # 선 그리기
+                rpos = (x1 + x2 )/ 2                # rpos 를 (x1 + x2) / 2 로 반환
+        
+    # 검출된 선 확인 
     # cv2.imshow("left line show", cdstp_l)
     # cv2.imshow("right line show", cdstp_r)
 
-    cdstp_add =cv2.add(cdstp_l, cdstp_r)
-    combo_image = cv2.addWeighted(frame, 0.8, cdstp_add,1,1)
+    cdstp_add =cv2.add(cdstp_l, cdstp_r)                        # 왼쪽 선 오른 쪽 선 합치기 
+    combo_image = cv2.addWeighted(frame, 0.9, cdstp_add,1,1)      # 카메라 img와 검출된 선의 img 합치기 
     # cv2.imshow("line show", cdstp_add)
     #cv2.imshow("lines", line_image)
     #print(x1," ", y1," ",x2, " ",y2)
@@ -319,36 +328,29 @@ def start():
         # 우선 테스트를 위해 직진(0값)으로 설정
         speed = 10
 
-        angle = (pos[0] +pos[1])/2 -320
-        # print(angle)
-        angle = angle * (0.228)
-        # print(angle)
-        if abs(angle) < 1.5:
-            speed = 16
-        if abs(angle) < 6.5:
-            speed = 14
-        elif abs(angle) > 6.5 and abs(angle) <12:
-            speed = 10
-        elif abs(angle) < 14:
-            speed = 7
-            angle = angle * (1.2)
-        else :
-            speed = 5
-            angle = angle * (1.35)
 
-        # print(pos[0], pos[1], angle)
-	    #angle = (pos[0] +pos[1]) / 2 * (0.15)
-        #print(angle)
-        
         #=========================================
         # 차량의 속도 값인 speed값 정하기.
         # 직선 코스에서는 빠른 속도로 주행하고 
         # 회전구간에서는 느린 속도로 주행하도록 설정함.
         #=========================================
 
-        # 우선 테스트를 위해 느린속도(10값)로 설정
-        
-		
+        angle = (pos[0] +pos[1])/2 -320         # 중심으로 부터 얼마나 떨어져있는지 계산하기 위해 320을 빼줌
+        # print(angle)
+        angle = math.atan2(angle, 240)*180 /np.pi       # 각도 계산 atan를 이용하여 계산 
+        # print(angle)
+
+        # 각도에 따라 속도 조절 
+        if abs(angle) < 1.5:
+            speed = 25
+        if abs(angle) < 6.5:
+            speed = 20
+        elif abs(angle) > 6.5 and abs(angle) <12:
+            speed = 16
+        elif abs(angle) < 14:
+            speed = 13
+            
+	
         # drive() 호출. drive()함수 안에서 모터 토픽이 발행됨.
         drive(angle, speed)
 
