@@ -41,7 +41,7 @@ def onMouse(event, x, y, flags, param):
 
 # 왼쪽 차선 roi
 def roi_l(image):
-    polygons = np.array([[(120,350),(390,350),(190,420),(1,420)]])
+    polygons = np.array([[(120,360),(390,360),(190,420),(1,420)]])
     image_mask = np.zeros_like(image)           # image_mask에 image 크기만큼 0인 배열 생성 
     cv2.fillPoly(image_mask,polygons,255)       # 관심영역 만큼만 255로 설정
     masking_image = cv2.bitwise_and(image,image_mask)   # bitwise연산을 통해 관심 영역만 추출해서 저장
@@ -49,19 +49,19 @@ def roi_l(image):
 
 # 오른쪽 차선 roi
 def roi_r(image):
-    polygons = np.array([[(250,350),(500,350),(635,420),(340,420)]])
+    polygons = np.array([[(290,360),(500,360),(635,420),(340,420)]])
     image_mask = np.zeros_like(image)           # image_mask에 image 크기만큼 0인 배열 생성 
     cv2.fillPoly(image_mask,polygons,255)       # 관심영역 만큼만 255로 설정
     masking_image = cv2.bitwise_and(image,image_mask)   # bitwise연산을 통해 관심 영역만 추출해서 저장
     return masking_image
 
-# def roi(image):
-#     triangle = np.array([[(5,407),(630,420),(320,264)]])
-#     mask = np.zeros_like(image)
-#     cv2.fillPoly(mask,triangle,255)
-#     mask = cv2.bitwise_and(image,mask)
-#     return mask
-
+# 앞쪽 차선 
+def roi(image):
+    polygons = np.array([[(220,290),(410,290),(430,300),(210,300)]])
+    image_mask = np.zeros_like(image)           # image_mask에 image 크기만큼 0인 배열 생성 
+    cv2.fillPoly(image_mask,polygons,255)       # 관심영역 만큼만 255로 설정
+    masking_image = cv2.bitwise_and(image,image_mask)   # bitwise연산을 통해 관심 영역만 추출해서 저장
+    return masking_image
 
 # 평균선 계산 
 def average(lines):
@@ -153,7 +153,7 @@ def mask_img(image, blue_threshold = 200, green_threshold = 200, red_threshold =
 
 def process_image(frame):
     global Offset
-    lpos = 60                   # 차선 검출되지 않을 때 값  
+    lpos = 50                   # 차선 검출되지 않을 때 값  
     rpos = 590                  # 차선 검출되지 않을 때 값  
 
     # masking only white color 
@@ -168,13 +168,15 @@ def process_image(frame):
     # roi divide left, right 
     dst_l = roi_l(dst)      # 관심영역 왼쪽 
     dst_r = roi_r(dst)      # 관심영역 오른쪽 
-    # cv2.imshow("roi", dst_l)
+    
+    dst_m = roi(dst)
+    # cv2.imshow("roi", dst_m)
 
     cdst_l = cv2.cvtColor(dst_l, cv2.COLOR_GRAY2BGR) # gray to bgr 
     cdst_r = cv2.cvtColor(dst_r, cv2.COLOR_GRAY2BGR) # gray to bgr 
     cdstp_l = np.copy(cdst_l)   
     cdstp_r = np.copy(cdst_r)    
-    # cdstp = cv2.cvtColor(dst_m,cv2.COLOR_GRAY2BGR)
+    cdstp_m = cv2.cvtColor(dst_m,cv2.COLOR_GRAY2BGR)
 
 
     # 처음에 houghlines로 시도 
@@ -197,6 +199,23 @@ def process_image(frame):
     ##########################
     linesP_l = cv2.HoughLinesP(dst_l, 1, np.pi / 180, 40, None, 50, 10)
     linesP_r = cv2.HoughLinesP(dst_r, 1, np.pi / 180, 40, None, 50, 10)
+
+    # 급격한 회전을 방지하기 위해 앞에 있는 차선 검출
+    linesP_m = cv2.HoughLinesP(dst_m, 1, np.pi / 180, 10, None, 10, 30)
+
+    if linesP_m is not None:
+        for line in linesP_m:                     
+            for x1, y1, x2, y2 in line:                   #왼쪽의 개수만큼 반복하면서 x1, y1, x2, y2 검출
+                cv2.line(cdstp_m, (x1,y1),(x2,y2), (0,0,255),3,cv2.LINE_AA)   # 선 그리기
+
+    # cv2.imshow("asd", cdstp_m)
+    
+    
+    if linesP_m is not None: 
+        # print(len(linesP_m))
+        front_num = len(linesP_m)
+    if linesP_m is None:
+        front_num = 0
     ###########################
 
     ############################ roi create only one 
@@ -253,11 +272,15 @@ def process_image(frame):
             slope = float(y2-y1) / float(x2-x1)     # 기울기 계산 
             if(slope) <= 0:                         # 기울기가 0보다 작으면 왼쪽선으로 인식 
                 cv2.line(cdstp_l, (x1,y1),(x2,y2), (0,0,255),15,cv2.LINE_AA)    # 선 그리기
-                lpos = (x1 + x2) / 2                 # lpos 를 (x1 + x2) / 2 로 반환
+                if rpos > lpos:
+                    lpos = (x1 + x2) / 2                 # lpos 를 (x1 + x2) / 2 로 반환
             else:                                   # 기울기가 0보다 크면 오른쪽선으로 인식 
                 cv2.line(cdstp_r, (x1,y1),(x2,y2), (0,0,255),15,cv2.LINE_AA)    # 선 그리기
-                rpos = (x1 + x2 )/ 2                # rpos 를 (x1 + x2) / 2 로 반환
-        
+                if lpos < rpos:
+                    rpos = (x1 + x2 )/ 2                # rpos 를 (x1 + x2) / 2 로 반환
+
+
+         
     # 검출된 선 확인 
     # cv2.imshow("left line show", cdstp_l)
     # cv2.imshow("right line show", cdstp_r)
@@ -271,7 +294,7 @@ def process_image(frame):
 
     combo_image = draw_rectangle(combo_image, lpos, rpos, offset=Offset)
 
-    return (lpos, rpos), combo_image
+    return (lpos, rpos), front_num, combo_image
 
 
 
@@ -312,7 +335,7 @@ def start():
 
         # 이미지처리를 위해 카메라 원본이미지를 img에 복사 저장
         img = image.copy()  
-        pos, frame = process_image(img)
+        pos,num, frame = process_image(img)
         
 
         # 디버깅을 위해 모니터에 이미지를 디스플레이
@@ -334,23 +357,36 @@ def start():
         # 직선 코스에서는 빠른 속도로 주행하고 
         # 회전구간에서는 느린 속도로 주행하도록 설정함.
         #=========================================
-
+         
         angle = (pos[0] +pos[1])/2 -320         # 중심으로 부터 얼마나 떨어져있는지 계산하기 위해 320을 빼줌
         # print(angle)
         angle = math.atan2(angle, 240)*180 /np.pi       # 각도 계산 atan를 이용하여 계산 
         # print(angle)
 
         # 각도에 따라 속도 조절 
-        if abs(angle) < 1.5:
+        if abs(angle) < 6:
+            angle = 0
             speed = 25
-        if abs(angle) < 6.5:
+            if num < 4:         # 앞에 차선 검출이 일정수준 이하이면 회전으로
+                speed = 15
+                # print(num, "find front curved road")
+        if abs(angle) < 7.5:
+            agnle = angle * 0.9            # 안정적 주행을 위해 각도가 작으면 angle 수정을 최소화
             speed = 20
-        elif abs(angle) > 6.5 and abs(angle) <12:
-            speed = 16
-        elif abs(angle) < 14:
+        elif abs(angle) <14:
+            speed = 15
+            angle = angle * 0.8
+        elif abs(angle) < 20:
             speed = 13
-            
-	
+            # print(angle)
+            angle = angle * 0.7
+        elif abs(angle) < 25:
+            speed = 10
+            # print(angle, '30')
+            angle = angle * 0.75
+        else:                               # 차선 이탈방지를 위해 차선이 너무 가까우면 핸들을 더 꺽어줌
+            speed = 8
+            angle = angle * 0.85
         # drive() 호출. drive()함수 안에서 모터 토픽이 발행됨.
         drive(angle, speed)
 
