@@ -19,7 +19,7 @@ import random
 
 
 Offset = 330
-
+tmp = 0
 
 # 네모 그리기 
 def draw_rectangle(img, lpos, rpos, offset=0):
@@ -363,6 +363,9 @@ def start():
         angle = math.atan2(angle, 240)*180 /np.pi       # 각도 계산 atan를 이용하여 계산 
         # print(angle)
 
+        if(abs(tmp - angle) > 20): 		# 이전 속도와 비교해서 20도 이상 차이나면 각도를 1/2로 줄인다.
+	angle = angle * 0.5
+        tmp = angle
         # 각도에 따라 속도 조절 
         if abs(angle) < 6:
             angle = 0
@@ -371,7 +374,7 @@ def start():
                 speed = 15
                 # print(num, "find front curved road")
         if abs(angle) < 7.5:
-            agnle = angle * 0.9            # 안정적 주행을 위해 각도가 작으면 angle 수정을 최소화
+            agnle = angle * 0.95            # 안정적 주행을 위해 각도가 작으면 angle 수정을 최소화
             speed = 20
         elif abs(angle) <14:
             speed = 15
