@@ -23,4 +23,4 @@ RRT path planning을 하기위해서는 map이 있어야 하고, 현재 위치�
 
 ### 1일 차 
 위의 코드대로 visual studio 2019에 실행하려고 하니까 matplotlibcpp 에러가 떴다. 
-이 error를 해결하려면 vcpkg를 설치하라고 했다. 
+이 error를 해결하려면 vcpkg를 설치하라고 했다.  하지만 visual studio 2019에서는 안된다는 말도 있었고, vcpkg로 설치후 해보니까 잘안되서 ubuntu 환경에서 다시 하기로 했다 ㅠㅠ 
