@@ -16,3 +16,11 @@ RRT 알고리즘 구현 방법은 다음과 같다.
 
 
 RRT path planning을 하기위해서는 map이 있어야 하고, 현재 위치를 알아야 하며, 목표지점을 알아야한다. 그리고 로봇이 한번에 갈 수있는 최대 크기를 정해야 한다. 
+
+
+구현은 다음 사이트를 참고 하였다. https://github.com/markusbuchholz/Path_Planning_RRT_algorithm
+------------
+
+### 1일 차 
+위의 코드대로 visual studio 2019에 실행하려고 하니까 matplotlibcpp 에러가 떴다. 
+이 error를 해결하려면 vcpkg를 설치하라고 했다. 
