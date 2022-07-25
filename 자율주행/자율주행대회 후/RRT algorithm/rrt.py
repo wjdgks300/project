@@ -229,12 +229,12 @@ while(running):
         x_cur = ans[0]                          # 현재 이동한 x 점
         y_cur = ans[1]                          # 현재 이동한 y 점
         if screen.get_at((x_cur,y_cur)) != (0,0,0,255) and (x_cur,y_cur) not in parent:     # 이전에 방문안했고, (0,0,0,255) 아니면
-            parent[(x_cur,y_cur)]=(x_m,y_m)                                                 # parent 에 넣는다.
+            parent[(x_cur,y_cur)]=(x_m,y_m)                                                 # parent x_cur, y_cur에 부모 좌표인 x_m, y_m을 넣는다.
             if screen.get_at((x_cur,y_cur)) == (0, 255, 0, 255):                            # 목적지 도착했으면 이전에 방문했던 좌표를 따라 trace
                 Trace=(x_cur,y_cur)
                 print("End", x_cur, y_cur, x_m,y_m)
                 running = False
-            pygame.draw.line(screen, BLUE, (x_cur,y_cur), (x_m,y_m), 2)                     # 이동할 좌표를 파란색으로 이어준다.
+            pygame.draw.line(screen, BLUE, (x_cur,y_cur), (x_m,y_m), 2)                     # 이동할 좌표를 파란색으로 이어준다. 자식 (x_cur,y_cur) <- 부모(x_m,y_m)
     pygame.display.update()
 
 running = True
@@ -244,10 +244,10 @@ while(Trace and running):
         if event.type == pygame.QUIT:
             running = False
             break
-    while(Trace!=Start):
-        x,y = parent[Trace]
-        pygame.draw.line(screen, GREEN, (x,y), Trace, 2)                                # 목적지까지 도달한 점들을 초록색으로 칠한다.
-        Trace=(x,y)
+    while(Trace!=Start):                                                                # 목적지까지 도달한 점들을 초록색으로 칠한다.
+        x,y = parent[Trace]                                                             # parent(x,y)를 통하여 가장 가까운 x,y값을 불러오고
+        pygame.draw.line(screen, GREEN, (x,y), Trace, 2)                                # x, y부터 trace 까지 초록색으로 이어준다.
+        Trace=(x,y)                                                                     # x, y 는 cur_x , cur_y 로 바꿔주고 start가 될때 까지 반복한다.
         #print("Trace",x,y)
     DesText("Green Colored Path is the Required Path")
     pygame.display.update()
