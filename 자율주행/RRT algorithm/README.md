@@ -87,7 +87,8 @@ RRT* 알고리즘은 RRT알고리즘의 성능을 Optomality 관점에서 개선
 - 비용함수 도입
 - new state의 neighbor들을 Optimal path로 Rewiring 작업 추가 
 
-![KakaoTalk_20220728_232840740](https://user-images.githubusercontent.com/63197363/181549238-4adcf97b-db3a-4fb7-a78a-9e483a5c3972.jpg)
+
+![image](https://user-images.githubusercontent.com/63197363/181553761-7ce1e07e-ae5b-44fa-a4b6-0252aea89098.png)
 
 
 RRT* 알고리즘은 RRT 알고리즘과 처음은 유사하다. (a,b)
