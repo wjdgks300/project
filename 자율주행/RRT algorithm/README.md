@@ -65,4 +65,18 @@ github에 올라와있는 python 코드를 발견하고 그대로 실행해보�
 -> https://jdj2261.github.io/review/2021/10/07/rrt-star-review.html 여기에 rrt 에 관한 설명이 있으니 이거 보고 참고하여 공부를 하고 모르는 것들 알아내기! 
 
 
+--------------------
+[int (((x_m - x)/(y_m - y))*( y_m+Step - y) + x),y_m+Step]  이 부분에서 step은 한번에 이동할 거리이고, 이 좌표는 이동했을 때의 좌표인것 같다. 
+이유는 이전에 이러한 코드가 나온다. 
+
+for u in range(y_m+1, y+1):                                
+                    x_cur = int (((x_m - x)/(y_m - y))*( u - y) + x)
+                    y_cur = u
+                    if screen.get_at((x_cur,y_cur)) == (0,0,0,255):         
+                        good=False
+                        break
+
+여기 부분은 장애물이 있는지 확인하는 코드인데, x_cur 과 y_cur을 계산하는 부분을 보면 위의 [int (((x_m - x)/(y_m - y))*( y_m+Step - y) + x),y_m+Step] 와 매우 유사하다. x_cur, y_cur에서 step 만큼만 이동시켜 준것으로 보인다. 
+
+그리고 step size가 커지면 목표지점을 빨리 찾고, 작은 step size이면 좀 더 최적의 길을 찾는다라는 설명을 봐서 step size는 한번에 이동하는 거리가 맞다고 생각한다. 
 
