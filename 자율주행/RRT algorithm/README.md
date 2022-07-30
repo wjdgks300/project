@@ -80,3 +80,22 @@ for u in range(y_m+1, y+1):
 
 그리고 step size가 커지면 목표지점을 빨리 찾고, 작은 step size이면 좀 더 최적의 길을 찾는다라는 설명을 봐서 step size는 한번에 이동하는 거리가 맞다고 생각한다. 
 
+## RRT* 알고리즘 
+
+RRT* 알고리즘은 RRT알고리즘의 성능을 Optomality 관점에서 개선한 경로 생성 방법론이다. RRT 알고리즘의 결과는 최적의 해답이 아니기 때문에 이를 개선한 것이 RRT*이다. 
+### RRT* 알고리즘만의 차별점 
+- 비용함수 도입
+- new state의 neighbor들을 Optimal path로 Rewiring 작업 추가 
+
+
+![image](https://user-images.githubusercontent.com/63197363/181553761-7ce1e07e-ae5b-44fa-a4b6-0252aea89098.png)
+
+
+RRT* 알고리즘은 RRT 알고리즘과 처음은 유사하다. (a,b)
+먼저 처음에 랜덤 샘플링을 하고, 새로운 노드를 가장 가까운 노드와 연결한다. 
+그 다음 과정은 최적의 부모를 찾는 과정이다.(c,d)  Xinit로 부터 Xnew까지의 비용을 고려하여 비용이 더 적은 path를 다시 구하는 과정이다. 
+
+그 후 rewiring 작업을 시작한다. (e,f) rewiring 작업은 neighbor 노드들을 탐색하여 주변 이웃 노드들의 path를 한번 더 최적화 하는 과정이다. 
+-> 이웃 노드들에 대해 비용 관점에서 최적화를 진행하여 Optimality를 향상 시킨다. 
+
+
